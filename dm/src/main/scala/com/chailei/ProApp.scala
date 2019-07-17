@@ -185,7 +185,7 @@ object ProApp {
 
 //    billstructType.printTreeString()
 
-    billDF.flatMap(line =>{
+    val shoppingRDD = billDF.flatMap(line => {
       val shoppingSheets = line.getAs[String]("installments")
       val arrayBuffer = ArrayBuffer[Row]()
       val shoppingSheetsArray = JSON.parseArray(shoppingSheets)
@@ -193,27 +193,87 @@ object ProApp {
         val billsObject = shoppingSheetsArray.getJSONObject(index)
         val amountMoney = billsObject.getDouble("amount_money")
         val balance = billsObject.getDouble("balance")
-        val card_num = billsObject.getDouble("card_num")
-        val category = billsObject.getDouble("category")
-        val currency_type = billsObject.getDouble("currency_type")
-        val description = billsObject.getDouble("description")
-        val id = billsObject.getDouble("id")
-        val name_on_opposite_card = billsObject.getDouble("name_on_opposite_card")
-        val opposite_bank = billsObject.getDouble("opposite_bank")
-        val opposite_card_no = billsObject.getDouble("opposite_card_no")
-        val order_index = billsObject.getDouble("order_index")
-        val post_date = billsObject.getDouble("post_date")
-        val remark = billsObject.getDouble("remark")
-        val trans_addr = billsObject.getDouble("trans_addr")
-        val trans_channel = billsObject.getDouble("trans_channel")
-        val trans_date = billsObject.getDouble("trans_date")
-        val trans_method = billsObject.getDouble("trans_method")
-
+        val card_num = billsObject.getString("card_num")
+        val category = billsObject.getString("category")
+        val currency_type = billsObject.getString("currency_type")
+        val description = billsObject.getString("description")
+        val id = billsObject.getString("id")
+        val name_on_opposite_card = billsObject.getString("name_on_opposite_card")
+        val opposite_bank = billsObject.getString("opposite_bank")
+        val opposite_card_no = billsObject.getString("opposite_card_no")
+        val order_index = billsObject.getLong("order_index")
+        val post_date = billsObject.getString("post_date")
+        val remark = billsObject.getString("remark")
+        val trans_addr = billsObject.getString("trans_addr")
+        val trans_channel = billsObject.getString("trans_channel")
+        val trans_date = billsObject.getString("trans_date")
+        val trans_method = billsObject.getString("trans_method")
+        arrayBuffer.append(Row.merge(line, Row(amountMoney, balance, card_num, category, currency_type, description,
+          id, name_on_opposite_card, opposite_bank, opposite_card_no, order_index, post_date, remark, trans_addr,
+          trans_channel, trans_date, trans_method)))
 
       }
 
       arrayBuffer.toArray[Row]
     })
+
+
+    val shoppingSheetsStructType = billstructType.add(StructField("shopping_amount_money", DoubleType, true)).add(StructField("shopping_balance", StringType, true))
+      .add(StructField("shopping_card_num", StringType, true)).add(StructField("shopping_category", StringType, true))
+      .add(StructField("shopping_currency_type", StringType, true)).add(StructField("shopping_description", StringType, true))
+      .add(StructField("shopping_id", StringType, true)).add(StructField("shopping_name_on_opposite_card", StringType, true))
+      .add(StructField("shopping_opposite_bank", StringType, true)).add(StructField("shopping_opposite_card_no", StringType, true))
+      .add(StructField("shopping_order_index", LongType, true)).add(StructField("shopping_post_date", StringType, true))
+      .add(StructField("shopping_remark", StringType, true)).add(StructField("shopping_trans_addr", StringType, true))
+      .add(StructField("shopping_trans_channel", StringType, true)).add(StructField("shopping_trans_date", StringType, true))
+      .add(StructField("shopping_trans_method", StringType, true))
+
+    val shoppingSheetDF = spark.createDataFrame(shoppingRDD, shoppingSheetsStructType)
+
+    shoppingSheetDF.show()
+
+
+
+    val depositeRDD = baseInfo.flatMap(line => {
+      val depositsSheets = line.getAs[String]("deposits")
+      val arrayBuffer = ArrayBuffer[Row]()
+      val depositsSheetsArray = JSON.parseArray(depositsSheets)
+
+      depositsSheetsArray.size() match {
+        case 0 =>{
+          arrayBuffer.append(Row.merge(line,Row(9999d, 9999d ,9999d, "9999","9999","9999","9999","9999")))
+        }
+        case _ =>{
+          for (index <- 0 until depositsSheetsArray.size) {
+            val depositsObject = depositsSheetsArray.getJSONObject(index)
+            val deperiod = depositsObject.getDouble("period")
+            val depInterest = depositsObject.getDouble("interest")
+            val depBalance = depositsObject.getDouble("balance")
+            val depCurrencyType = depositsObject.getString("currency_type")
+            val depositType = depositsObject.getString("deposit_type")
+            val depositDate = depositsObject.getString("deposit_date")
+            val depDueDate = depositsObject.getString("due_date")
+            val deperiodUnit = depositsObject.getString("period_unit")
+            arrayBuffer.append(Row.merge(line, Row(deperiod, depInterest, depBalance, depCurrencyType,
+              depositType, depositDate, depDueDate, deperiodUnit)))
+          }
+        }
+      }
+
+      arrayBuffer.toArray[Row]
+    })
+
+    val depositStructType = datastructType.add(StructField("deposit_period", DoubleType, true)).add(StructField("deposit_interest", DoubleType, true))
+      .add(StructField("deposit_balance", DoubleType, true)).add(StructField("deposit_currency_type", StringType, true))
+      .add(StructField("deposit_type", StringType, true)).add(StructField("deposit_date", StringType, true))
+      .add(StructField("deposit_due_date", StringType, true)).add(StructField("deposit_period_unit", StringType, true))
+
+
+
+
+    val depositDF = spark.createDataFrame(depositeRDD, depositStructType)
+
+    depositDF.show()
 
 
 
